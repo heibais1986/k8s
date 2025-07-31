@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>现代运维工程师面试核心知识点 (含大模型部署)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3, h4 {
+            color: #335d92; /* A calmer blue */
+            border-bottom: 2px solid #5d8cae;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: none;
+            font-size: 2.2em;
+        }
+        h2 {
+            font-size: 1.8em;
+        }
+        h3 {
+            font-size: 1.4em;
+            border-bottom-style: dashed;
+            border-bottom-width: 1px;
+        }
+        h4 {
+            font-size: 1.2em;
+            color: #545b64;
+            border-bottom: none;
+            margin-top: 25px;
+        }
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            color: #c7254e;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        strong {
+            color: #c7254e;
+        }
+        .question-block {
+            background-color: #f8f9fa;
+            border-left: 5px solid #5d8cae;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 15px;
+        }
+        .intro, .conclusion {
+            background-color: #eef3f8;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #d1e0ec;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>现代运维工程师面试核心知识点 (含大模型部署)</h1>
+
+        <div class="intro">
+            <p>这份指南为准备SRE、DevOps或平台工程师职位的您而设计。内容涵盖了从容器化、服务编排、主流中间件到大模型部署等现代运维领域的核心技术。面试官不仅希望了解您“会不会用”，更关心您是否理解其“核心原理”以及在复杂场景下的“排错和优化能力”。</p>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- 1. 容器化与编排 -->
+        <!-- ============================================= -->
+        <h2>一、 容器化与编排</h2>
+
+        <h3>Docker</h3>
+        <p><strong>核心原理</strong>：Docker 利用 Linux 内核的 <strong>Namespace</strong> (资源隔离) 和 <strong>Cgroups</strong> (资源限制) 技术实现轻量级虚拟化。与虚拟机(VM)相比，它不虚拟化硬件，而是共享宿主机内核，因此启动更快、资源占用更少。</p>
+        
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>Docker 和虚拟机的区别是什么？</strong><br>
+                    答：主要区别在于隔离级别和资源利用率。<strong>虚拟机</strong>在宿主机上虚拟化一整套硬件，然后运行一个完整的客户机操作系统，隔离性好但资源开销大。<strong>Docker</strong>直接运行在宿主机内核之上，通过 Namespace 和 Cgroups 实现进程级别的隔离，启动快、占用资源少，但所有容器共享同一个内核。
+                </li>
+                <li><strong>解释一下 Docker 的镜像和容器的关系。</strong><br>
+                    答：可以类比为编程中的“类”和“实例”。<strong>镜像 (Image)</strong> 是一个只读的模板，包含了运行应用程序所需的文件系统、库、依赖和代码。镜像是分层的，每一层都是一组文件变更。<strong>容器 (Container)</strong> 是镜像的运行时实例。从一个镜像可以创建多个相互隔离的容器。对容器的任何修改（如写入文件）都发生在其顶部的可写层，不会影响到底层镜像。
+                </li>
+                <li><strong>常用的 Docker 命令有哪些？</strong><br>
+                    答：
+                    <pre><code># 镜像操作
+docker images         # 列出本地镜像
+docker pull [image]   # 拉取镜像
+docker build -t [name:tag] . # 构建镜像
+docker rmi [image_id] # 删除镜像
+
+# 容器操作
+docker ps             # 列出正在运行的容器
+docker ps -a          # 列出所有容器
+docker run -d -p 80:80 [image] # 后台运行容器并映射端口
+docker stop [container_id] # 停止容器
+docker start [container_id]# 启动容器
+docker rm [container_id]   # 删除容器
+docker logs [container_id] # 查看容器日志
+docker exec -it [container_id] /bin/bash # 进入容器交互</code></pre>
+                </li>
+                 <li><strong>Dockerfile 是什么？请写一个简单的 Java 应用的 Dockerfile。</strong><br>
+                    答：Dockerfile 是一个文本文件，用来定义如何自动构建一个 Docker 镜像。
+                    <pre><code># 使用官方的 OpenJDK 11 作为基础镜像
+FROM openjdk:11-jre-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 将构建好的 jar 包复制到容器的 /app 目录下
+COPY target/my-app-1.0.jar my-app.jar
+
+# 声明容器对外暴露的端口
+EXPOSE 8080
+
+# 容器启动时执行的命令
+ENTRYPOINT ["java", "-jar", "my-app.jar"]</code></pre>
+                </li>
+            </ul>
+        </div>
+
+        <h3>Kubernetes (K8s)</h3>
+        <p><strong>核心原理</strong>：K8s 是一个用于自动部署、扩展和管理容器化应用程序的开源平台。其核心是<strong>声明式 API</strong> 和<strong>控制器模式</strong>。用户通过 YAML 文件“声明”期望的系统状态（如：我需要3个 Nginx 副本），K8s 的各种控制器 (Controller) 会持续工作，将系统的“实际状态”调整为用户期望的“最终状态”。</p>
+        
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>请描述 K8s 的核心组件及其作用。</strong><br>
+                    答：K8s 集群分为 Master 节点和 Worker 节点。<br>
+                    <strong>Master 组件 (控制平面)</strong>:<br>
+                    • <code>kube-apiserver</code>: 暴露 K8s API，是所有组件交互的统一入口，负责处理和验证请求。<br>
+                    • <code>etcd</code>: 高可用的键值存储系统，保存了整个集群的所有状态数据。<br>
+                    • <code>kube-scheduler</code>: 负责 Pod 的调度，当一个新 Pod 被创建时，Scheduler 会根据资源需求、亲和性等策略为其选择一个合适的 Worker 节点。<br>
+                    • <code>kube-controller-manager</code>: 运行所有控制器，如节点控制器、副本控制器等，负责维护集群状态。<br>
+                    <strong>Worker 节点组件</strong>:<br>
+                    • <code>kubelet</code>: 在每个 Worker 节点上运行的代理，负责与 Master 通信，管理本机上的 Pod 生命周期。<br>
+                    • <code>kube-proxy</code>: 负责实现 K8s Service 的网络通信和负载均衡。<br>
+                    • <code>Container Runtime</code>: 容器运行时，如 Docker 或 containerd，负责真正地运行容器。
+                </li>
+                <li><strong>Pod 是什么？它和容器是什么关系？</strong><br>
+                    答：<strong>Pod</strong> 是 K8s 中可以创建和管理的<strong>最小部署单元</strong>。一个 Pod 包含一个或多个紧密关联的容器。这些容器共享同一个网络命名空间（同一个 IP 地址和端口空间）、存储卷 (Volume)，可以像在同一台物理机上一样通过 `localhost` 通信。通常一个 Pod 只运行一个主容器，但也可以包含辅助容器 (Sidecar) 来执行日志收集、服务网格代理等任务。
+                </li>
+                <li><strong>Deployment, StatefulSet, DaemonSet 有什么区别？</strong><br>
+                    答：这三者都是用于管理 Pod 的控制器，但适用场景不同。<br>
+                    • <code>Deployment</code>: 最常用，用于管理<strong>无状态应用</strong>。它支持滚动更新、回滚、扩缩容。Pod 的名称是随机的，也没有稳定的网络标识。<br>
+                    • <code>StatefulSet</code>: 用于管理<strong>有状态应用</strong>，如数据库。它能保证 Pod 拥有稳定的、唯一的网络标识（如 `pod-0`, `pod-1`）和持久化存储。部署、更新和删除都是按顺序进行的。<br>
+                    • <code>DaemonSet</code>: 确保在<strong>每个 (或部分) Worker 节点上都运行一个 Pod 副本</strong>。常用于部署日志收集、节点监控等集群级别的守护进程。
+                </li>
+                <li><strong>解释一下 K8s 的 Service。它有哪几种类型？</strong><br>
+                    答：Service 是一个抽象，它定义了一组 Pod 的逻辑集合和一个访问它们的策略。它为这组 Pod 提供了一个<strong>稳定</strong>的入口地址。即使后端的 Pod 发生漂移、重建，Service 的 IP 和端口保持不变。<br>
+                    主要类型有：<br>
+                    • <code>ClusterIP</code>: (默认) 只在集群内部可见，通过一个虚拟 IP 提供服务。<br>
+                    • <code>NodePort</code>: 在每个节点的同一个端口上暴露服务，可以通过 `&lt;NodeIP&gt;:&lt;NodePort&gt;` 从集群外部访问。<br>
+                    • <code>LoadBalancer</code>: 在 NodePort 的基础上，向云服务商（如 AWS, GCP）申请一个外部负载均衡器来转发流量到 Service。<br>
+                    • <code>ExternalName</code>: 将 Service 映射到 DNS 名称，常用于集群内服务访问外部服务。
+                </li>
+                <li><strong>常用的 kubectl 命令有哪些？</strong><br>
+                    答：
+                    <pre><code># 查看资源
+kubectl get pods/svc/deploy -n [namespace] -o wide
+kubectl describe pod [pod_name] # 查看 Pod 详细信息和事件
+
+# 操作资源
+kubectl apply -f [yaml_file]    # 创建或更新资源
+kubectl delete -f [yaml_file]   # 删除资源
+kubectl delete pod [pod_name] --force --grace-period=0 # 强制删除
+
+# 调试排错
+kubectl logs [pod_name] -c [container_name] # 查看日志
+kubectl exec -it [pod_name] -- /bin/sh      # 进入容器
+kubectl port-forward [pod_name] 8080:80   # 端口转发
+
+# 集群管理
+kubectl top pod/node            # 查看资源使用情况
+kubectl cordon/uncordon [node_name] # 标记节点不可调度/可调度
+kubectl drain [node_name]       # 驱逐节点上的 Pod</code></pre>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- ============================================= -->
+        <!-- 2. 数据库与缓存 -->
+        <!-- ============================================= -->
+        <h2>二、 数据库与缓存</h2>
+
+        <h3>MySQL</h3>
+        <p><strong>核心原理</strong>：MySQL 是一个流行的关系型数据库管理系统。其核心存储引擎 <strong>InnoDB</strong> 支持事务、行级锁和外键。数据通过 B+ 树索引来优化查询速度。主从复制 (Replication) 是实现读写分离和高可用的基础。</p>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>解释一下 MySQL 的事务及其 ACID 特性。</strong><br>
+                    答：事务是一组原子性的 SQL 操作，要么全部成功，要么全部失败。ACID 是事务的四个核心特性：<br>
+                    • <strong>原子性 (Atomicity)</strong>: 事务是不可分割的最小工作单元。<br>
+                    • <strong>一致性 (Consistency)</strong>: 事务执行前后，数据库从一个有效状态转变到另一个有效状态。<br>
+                    • <strong>隔离性 (Isolation)</strong>: 多个并发事务之间互不干扰。这通过不同的隔离级别（读未提交、读已提交、可重复读、串行化）实现。<br>
+                    • <strong>持久性 (Durability)</strong>: 事务一旦提交，其结果就是永久性的。
+                </li>
+                <li><strong>MySQL 的索引为什么能加速查询？B+ 树索引有什么特点？</strong><br>
+                    答：索引通过预排序的数据结构（如B+树）来避免全表扫描，将查询复杂度从 O(N) 降低到 O(logN)。B+ 树的特点是：<br>
+                    1. 所有<strong>数据都存储在叶子节点</strong>，非叶子节点只存储键值和指针，这使得单个节点可以容纳更多索引项，树的高度更低。<br>
+                    2. 所有叶子节点通过<strong>双向链表</strong>连接，非常适合范围查询。
+                </li>
+                <li><strong>如何排查慢查询？</strong><br>
+                    答：1. 开启慢查询日志 (slow_query_log)，设置一个阈值 (long_query_time)。2. 分析慢查询日志文件，或者使用 `mysqldumpslow` 等工具。3. 对慢 SQL 语句使用 `EXPLAIN` 命令分析其执行计划，查看是否用到了索引、扫描了多少行等。4. 根据分析结果优化 SQL 语句或添加/修改索引。
+                </li>
+                 <li><strong>描述一下 MySQL 的主从复制过程。</strong><br>
+                    答：1. Master 节点将数据变更写入其二进制日志 (binlog)。2. Slave 节点上的 I/O 线程连接到 Master，请求 binlog，并将其写入本地的中继日志 (relay log)。3. Slave 节点的 SQL 线程读取 relay log，重放其中的 SQL 事件，从而使数据与 Master 保持一致。
+                </li>
+            </ul>
+        </div>
+
+        <h3>Redis</h3>
+        <p><strong>核心原理</strong>：Redis 是一个基于内存的高性能键值存储系统。它之所以快，主要因为：1. 纯内存操作；2. 单线程模型，避免了多线程上下文切换和锁的开销；3. 采用 I/O 多路复用技术 (epoll) 处理并发连接。</p>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>Redis 为什么是单线程的还这么快？</strong><br>
+                    答：因为它绝大部分操作都在内存中完成，非常高效。同时，单线程避免了多线程竞争和加锁的开销。网络 I/O 层面，它使用 I/O 多路复用模型 (如 epoll) 来高效处理大量客户端连接，一个线程就可以监听和处理多个 socket 的事件，不会因某个慢连接而阻塞。
+                </li>
+                <li><strong>Redis 有哪些数据结构？</strong><br>
+                    答：String (字符串), Hash (哈希), List (列表), Set (集合), ZSet (有序集合)。此外还有 HyperLogLog, Bitmap, GEO 等高级数据结构。
+                </li>
+                <li><strong>Redis 的持久化机制有哪些？</strong><br>
+                    答：<strong>RDB (Redis Database)</strong>: 在指定时间间隔内，将内存中的数据集快照写入磁盘。恢复速度快，但可能丢失最后一次快照后的数据。<strong>AOF (Append Only File)</strong>: 将每条写命令追加到文件末尾。数据安全性更高，但文件体积可能较大，恢复速度比 RDB 慢。通常会同时开启两者。
+                </li>
+                <li><strong>什么是缓存穿透、缓存击穿和缓存雪崩？如何解决？</strong><br>
+                    答：<br>
+                    • <strong>缓存穿透</strong>: 查询一个不存在的数据，导致请求每次都直接打到数据库。<strong>解决</strong>：对空结果也进行缓存（设置较短过期时间）；使用布隆过滤器。<br>
+                    • <strong>缓存击穿</strong>: 一个热点 Key 过期，大量并发请求瞬间打到数据库。<strong>解决</strong>：使用互斥锁，只让一个请求去查询数据库并写回缓存；热点数据不设置过期时间。<br>
+                    • <strong>缓存雪崩</strong>: 大量 Key 在同一时间集体失效，导致数据库压力剧增。<strong>解决</strong>：将 Key 的过期时间设置一个随机范围；搭建高可用的 Redis 集群。
+                </li>
+            </ul>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- 3. 分布式协调与搜索 -->
+        <!-- ============================================= -->
+        <h2>三、 分布式协调与搜索</h2>
+
+        <h3>Zookeeper</h3>
+        <p><strong>核心原理</strong>：Zookeeper 是一个为分布式应用提供一致性服务的软件。它提供了一个类似文件系统的树形数据结构 (ZNode)，并保证了对这些 ZNode 操作的原子性和顺序一致性。其核心算法是 <strong>ZAB (Zookeeper Atomic Broadcast)</strong>，保证了主备节点之间数据同步和一致性。</p>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>Zookeeper 在分布式系统中通常用来做什么？</strong><br>
+                    答：主要用于：<strong>配置管理</strong>（将配置信息存放在 ZNode 中，各服务监听变化）、<strong>命名服务</strong>（类似 DNS）、<strong>分布式锁</strong>（利用临时顺序节点的特性）、<strong>集群管理</strong>（Master 选举、节点状态监控）。
+                </li>
+                <li><strong>解释一下 Zookeeper 的 ZNode 类型。</strong><br>
+                    答：ZNode 分为<strong>持久节点</strong>和<strong>临时节点</strong>。持久节点创建后一直存在，除非手动删除。临时节点与客户端的会话绑定，会话结束后节点自动删除。这两种节点又可以分别创建为<strong>顺序节点</strong>，即节点名后会自动追加一个递增的数字。
+                </li>
+                <li><strong>Zookeeper 是如何实现分布式锁的？</strong><br>
+                    答：通常利用<strong>临时顺序节点</strong>。当多个客户端要获取锁时，都在一个指定的锁节点下创建自己的临时顺序节点。然后，每个客户端获取锁节点下的所有子节点，判断自己创建的节点序号是否是最小的。如果是，则获取锁成功。如果不是，则监听比自己序号小的前一个节点。当前一个节点被删除（即前一个客户端释放锁）时，自己就能收到通知，再次尝试获取锁。
+                </li>
+            </ul>
+        </div>
+
+        <h3>Elasticsearch (ES)</h3>
+        <p><strong>核心原理</strong>：Elasticsearch 是一个基于 <strong>Lucene</strong> 库的分布式搜索和分析引擎。其核心是<strong>倒排索引 (Inverted Index)</strong>。倒排索引记录了词 (Term) 到包含该词的文档 (Document) 的映射关系，从而可以极快地响应全文检索请求。</p>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>什么是倒排索引？</strong><br>
+                    答：传统的正向索引是“文档 -> 词”的映射，而倒排索引是“词 -> 文档”的映射。ES 会对文档内容进行分词，为每个词创建一个列表，记录下所有包含这个词的文档 ID。当用户搜索一个词时，ES 只需查找这个词的倒排列表，就能立即知道哪些文档匹配，大大提高了搜索效率。
+                </li>
+                <li><strong>ES 是如何实现分布式的？</strong><br>
+                    答：ES 通过<strong>分片 (Shard)</strong> 和<strong>副本 (Replica)</strong> 来实现分布式。一个大的索引 (Index) 可以被水平切分成多个分片，每个分片都是一个功能完备的 Lucene 索引，可以分布在集群的不同节点上。每个分片可以有一个或多个副本，副本是分片的完整拷贝，用于提供数据冗余和读请求的负载均衡。
+                </li>
+                <li><strong>在写入一个文档时，ES 内部发生了什么？</strong><br>
+                    答：1. 客户端请求发送到集群任一节点。2. 该节点（协调节点）根据文档 ID 计算出应该路由到哪个主分片 (primary shard)。3. 请求被转发到持有该主分片的节点。4. 该节点在主分片上执行写入操作。5. 成功后，请求被并行转发到所有持有对应副本分片 (replica shard) 的节点。6. 当所有副本都报告成功后，协调节点向客户端返回成功响应。
+                </li>
+            </ul>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- 4. 自动化与配置管理 -->
+        <!-- ============================================= -->
+        <h2>四、 自动化与配置管理</h2>
+        
+        <h3>Ansible</h3>
+        <p><strong>核心原理</strong>：Ansible 是一个自动化运维工具，用于应用部署、配置管理、任务编排等。其特点是<strong>无客户端 (Agentless)</strong>，通过 SSH 协议与被管理节点通信。它使用 <strong>YAML</strong> 语言描述任务，易于读写，并遵循<strong>幂等性</strong>原则，即一个操作执行一次和执行多次的效果是相同的。</p>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>Ansible 的主要组成部分是什么？</strong><br>
+                    答：• <strong>Inventory</strong>: 定义被管理的主机列表，可以分组。<br>
+                    • <strong>Modules</strong>: Ansible 的核心，是具体执行任务的单元，如 `yum`, `copy`, `service` 等。<br>
+                    • <strong>Playbook</strong>: 一个或多个 Play 的集合，Play 是针对一组主机执行的一系列有序的任务 (Task)。Playbook 使用 YAML 格式编写。<br>
+                    • <strong>Roles</strong>: 一种组织 Playbook 内容的结构化方式，便于复用和分享。
+                </li>
+                <li><strong>什么是 Ansible 的幂等性？</strong><br>
+                    答：幂等性意味着重复执行同一个任务，结果总是一致的，不会产生副作用。例如，使用 `user` 模块创建一个用户，如果用户已存在，Ansible 不会再次创建，而是报告 "ok"。这使得配置管理非常可靠。
+                </li>
+                <li><strong>请写一个简单的 Playbook，用于在一组 web 服务器上安装并启动 Nginx。</strong><br>
+                    <pre><code>---
+- name: Install and start Nginx
+  hosts: webservers
+  become: yes # 使用 sudo 执行任务
+
+  tasks:
+    - name: Install Nginx using yum
+      yum:
+        name: nginx
+        state: present
+
+    - name: Ensure Nginx service is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes</code></pre>
+                </li>
+            </ul>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- 5. 大模型部署与算力管理 -->
+        <!-- ============================================= -->
+        <h2>五、 大模型(LLM)部署与算力管理</h2>
+        <p><strong>核心概念</strong>：大模型部署的核心挑战在于巨大的模型体积、高昂的计算和显存需求。运维需要关注的不再仅仅是 CPU 和内存，而是以 <strong>GPU/NPU</strong> 等加速器为核心的异构算力资源的管理、调度和监控。</p>
+        
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>我们常说的 GPN/NPU/DCU/MLU 是什么？它们和 GPU 有什么关系？</strong><br>
+                    答：这些都是用于AI计算的<strong>加速器芯片</strong>，通常被称为“算力卡”。<br>
+                    • <strong>GPU (Graphics Processing Unit)</strong>: 图形处理器，最初为图形渲染设计，因其强大的并行计算能力被广泛用于AI训练和推理。NVIDIA 的 GPU 是市场主流，如 A100, H100。<br>
+                    • <strong>NPU (Neural-network Processing Unit)</strong>: 神经网络处理器，专为AI应用（特别是神经网络计算）设计的处理器，如华为的昇腾 (Ascend) 系列。<br>
+                    • <strong>DCU (Deep Computing Unit)</strong>: 深度计算单元，是海光公司推出的用于数据中心和AI计算的加速器产品线。<br>
+                    • <strong>MLU (Machine Learning Unit)</strong>: 机器学习单元，是寒武纪公司推出的AI芯片系列。<br>
+                    总的来说，GPU 是通用目的的并行计算卡，而 NPU/DCU/MLU 等是针对特定AI计算场景进行优化的专用芯片 (ASIC)。
+                </li>
+                <li><strong>在 K8s 环境中如何管理和调度 GPU 资源？</strong><br>
+                    答：通常需要以下步骤：<br>
+                    1. 在每个具有 GPU 的节点上安装相应的<strong>驱动程序</strong>。<br>
+                    2. 部署由硬件厂商提供的 <strong>K8s Device Plugin</strong>。例如，NVIDIA 的 `nvidia-device-plugin`。这个插件会发现节点上的 GPU 资源，并向 `kubelet` 注册，使其成为 K8s 可调度的资源 (如 `nvidia.com/gpu`)。<br>
+                    3. 在 Pod 的 YAML 定义中，通过 `resources.limits` 字段来<strong>申请 GPU 资源</strong>。
+                    <pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: cuda-pod
+spec:
+  containers:
+    - name: my-container
+      image: nvidia/cuda:11.0-base
+      resources:
+        limits:
+          nvidia.com/gpu: 1 # 申请1个GPU卡</code></pre>
+                </li>
+                <li><strong>请简述部署一个开源大模型（如 Llama）的基本流程。</strong><br>
+                    答：基本流程如下：<br>
+                    1. <strong>环境准备</strong>: 准备一台或多台配备有足够显存的 GPU/NPU 服务器，并安装好驱动和 CUDA (或其他计算库)。<br>
+                    2. <strong>模型下载与转换</strong>: 从 Hugging Face 等社区下载模型权重。有时需要根据推理框架的要求进行格式转换。<br>
+                    3. <strong>选择推理服务框架</strong>: 选择一个合适的框架来加载模型并提供 API 服务。常用的有 vLLM, TensorRT-LLM, TGI (Text Generation Inference) 等。这些框架通常对推理性能（如吞吐量、延迟）做了深度优化。<br>
+                    4. <strong>封装与部署</strong>: 将推理服务打包成 Docker 镜像。编写 K8s Deployment 和 Service 的 YAML 文件，配置资源申请（特别是 GPU）、健康检查和对外暴露的服务端口。<br>
+                    5. <strong>持续监控</strong>: 使用 Prometheus 和 Grafana 等工具，监控 GPU 的利用率、显存使用情况、温度以及推理服务的 QPS 和延迟等关键指标。
+                </li>
+            </ul>
+        </div>
+        
+        <div class="conclusion">
+            <h4>面试技巧小贴士</h4>
+            <ul>
+                <li><strong>突出排错能力</strong>：准备一两个你亲身经历的、复杂的线上故障排查案例，并使用 STAR 法则清晰地讲述。</li>
+                <li><strong>展现架构思维</strong>：在回答问题时，不仅要说明“怎么做”，更要解释“为什么这么做”，展示你对系统可用性、扩展性和成本的思考。</li>
+                <li><strong>量化你的贡献</strong>：在描述项目经验时，尽量使用数字。例如，“通过XX优化，将应用的启动时间从2分钟缩短到30秒”，“将日志查询的P95延迟降低了50%”。</li>
+                <li><strong>对开源社区保持热情</strong>：展现你对新技术的关注和学习能力，如果你有相关的博客或 GitHub 项目，会是很好的加分项。</li>
+            </ul>
+            <p><strong>祝你面试成功，拿到心仪的 Offer！</strong></p>
+        </div>
+
+    </div>
+
+</body>
+</html>
