@@ -402,6 +402,50 @@ spec:
             </ul>
             <p><strong>祝你面试成功，拿到心仪的 Offer！</strong></p>
         </div>
+		
+		<!-- ============================================= -->
+        <!-- 6. 高级架构设计与场景题 -->
+        <!-- ============================================= -->
+        <h2>六、 高级架构设计与场景题</h2>
+        <div class="question-block">
+            <h4>常见问题：</h4>
+            <ul>
+                <li><strong>如何使用 AWS 设计一套纯无服务器 (Serverless) 架构来应对秒杀场景？</strong><br>
+                    答：设计一套纯 Serverless 的秒杀架构，核心思想是利用云服务自身的弹性、高可用和按需付费特性，最大限度地解耦和削峰填谷，避免任何单点瓶颈。<br><br>
+                    <strong>架构组件与流程：</strong><br>
+                    1.  <strong>静态内容加速层 (前端)</strong>:
+                        <ul>
+                            <li><strong>S3</strong>: 托管所有静态资源，如 HTML、CSS、JavaScript 文件和商品图片。</li>
+                            <li><strong>CloudFront</strong>: 作为 CDN，将 S3 上的静态内容缓存到全球各地的边缘节点。用户直接从最近的边缘节点加载页面，这能抵御绝大部分的刷新流量，极大降低源站压力。</li>
+                        </ul>
+                    2.  <strong>API 网关与请求入口</strong>:
+                        <ul>
+                            <li><strong>API Gateway</strong>: 作为所有动态请求的统一入口。它本身是高可用、自动扩展的。关键是要在 API Gateway 层面配置<strong>请求限流 (Throttling)</strong>，例如每秒只允许 10000 个请求进入后端，这是第一道防线，防止恶意流量直接冲垮后端。</li>
+                        </ul>
+                    3.  <strong>库存校验与请求过滤层 (核心)</strong>:
+                        <ul>
+                            <li><strong>Lambda (校验函数)</strong>: API Gateway 接收到的请求会触发一个轻量级的 Lambda 函数。这个函数的唯一职责是快速校验库存。</li>
+                            <li><strong>DynamoDB (库存表)</strong>: 商品库存信息存储在 DynamoDB 表中。利用 DynamoDB 的<strong>原子计数器 (Atomic Counter)</strong> 和<strong>条件更新 (Conditional Update)</strong> 特性来扣减库存。例如，执行 `UpdateItem` 操作，当且仅当 `stock > 0` 时，才将 `stock` 减 1。这个操作是原子性的，能有效防止超卖。只有成功扣减库存的请求，才能进入下一步。</li>
+                        </ul>
+                    4.  <strong>请求缓冲与削峰层</strong>:
+                        <ul>
+                            <li><strong>SQS (Simple Queue Service)</strong>: 库存校验成功的请求，其详细信息（如用户ID、商品ID、时间戳）会被封装成一条消息，发送到 SQS FIFO 队列中。Lambda 函数在发送消息后，可以立即向用户返回“排队成功，正在处理”的响应，提升用户体验。SQS 作为一个无限容量的缓冲区，将瞬时的高并发流量“削平”，让后端可以平稳地处理。</li>
+                        </ul>
+                    5.  <strong>异步订单处理层</strong>:
+                        <ul>
+                            <li><strong>Lambda (订单处理函数)</strong>: 配置另一个 Lambda 函数来消费 SQS 队列中的消息。可以设置该 Lambda 的<strong>批处理大小 (Batch Size)</strong> 和<strong>并发数 (Reserved Concurrency)</strong>，使其以一个稳定、可控的速率处理订单，避免对下游数据库造成冲击。</li>
+                            <li><strong>DynamoDB (订单表)</strong>: 订单处理函数负责创建真实的订单记录，并将订单数据写入到另一个 DynamoDB 表中。</li>
+                        </ul>
+                    <strong>优势总结</strong>:
+                    <ul>
+                        <li><strong>极致弹性</strong>: 所有组件（API Gateway, Lambda, DynamoDB, SQS）都能根据负载自动、快速地伸缩。</li>
+                        <li><strong>成本效益</strong>: 完全按实际使用量付费，没有流量时几乎没有成本，非常适合秒杀这种流量波峰波谷明显的场景。</li>
+                        <li><strong>高可用性</strong>: 核心服务都是 AWS 托管的区域级服务，天然具备跨可用区容灾能力。</li>
+                        <li><strong>运维简化</strong>: 无需管理服务器、操作系统和补丁，运维团队可以更专注于业务逻辑和性能优化。</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
 
     </div>
 
